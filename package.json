@@ -1,0 +1,17 @@
+{
+  "name": "ec2_performance_monitor",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.1008.0",
+    "dotenv": "^10.0.0",
+    "node-cron": "^3.0.0",
+    "node-fetch": "^3.0.0"
+  }
+}

@@ -2,6 +2,7 @@ require("dotenv").config(); // To fetch the environment variables
 
 const AWS = require("aws-sdk");
 const cron = require("node-cron");
+var osu = require("node-os-utils");
 const fetch = (...args) =>
   import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
@@ -44,11 +45,42 @@ function getDescriptionOfCPUUtilization(
         reject(err);
       } else {
         let description = `
-        __CPU Utilization__
-        Average: ${data.Datapoints[0].Average.toFixed(2)}%
-        Maximum: ${data.Datapoints[0].Maximum.toFixed(2)}%`;
+  __CPU Utilization__
+  Average: ${data.Datapoints[0].Average.toFixed(2)}%
+  Maximum: ${data.Datapoints[0].Maximum.toFixed(2)}%
+      `;
         resolve(description);
       }
+    });
+  });
+}
+
+function getDriveDescription() {
+  return new Promise((resolve, reject) => {
+    const drive = osu.drive;
+    drive.info().then((info) => {
+      let description = `
+  __Drive Usage__
+  Total Storage: ${info.totalGb} GB
+  Used Storage: ${info.usedGb} GB (${info.usedPercentage}%)
+  Free Storage: ${info.freeGb} GB (${info.freePercentage}%)
+      `;
+      resolve(description);
+    });
+  });
+}
+
+function getRamDescription() {
+  return new Promise((resolve, reject) => {
+    const mem = osu.mem;
+    mem.info().then((info) => {
+      let description = `
+  __RAM Usage__
+  Total Memory: ${info.totalMemMb} MB
+  Used Memory: ${info.usedMemMb} MB (${info.usedMemPercentage}%)
+  Free Memory: ${info.freeMemMb} MB (${info.freeMemPercentage}%)
+      `;
+      resolve(description);
     });
   });
 }
@@ -77,7 +109,7 @@ async function sendMonitorDetails() {
   try {
     let finalDescription = `
     **EC2 Monitoring Details**
-    Time: ${startDate.toUTCString()} to ${endDate.toUTCString()}`;
+    *Time: ${startDate.toUTCString()} to ${endDate.toUTCString()}*`;
     const CPUUtilizationDescription = await getDescriptionOfCPUUtilization(
       cloudWatch,
       instanceId,
@@ -85,7 +117,14 @@ async function sendMonitorDetails() {
       endDate,
       3600
     );
-    sendToDiscord(finalDescription + CPUUtilizationDescription);
+    const driveDescription = await getDriveDescription();
+    const ramDescription = await getRamDescription();
+    sendToDiscord(
+      finalDescription +
+        CPUUtilizationDescription +
+        driveDescription +
+        ramDescription
+    );
   } catch {
     sendToDiscord("Sending monitor details failed.");
   }
